@@ -6,22 +6,46 @@
  * @flow strict-local
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {View, StyleSheet, Button} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   interpolate,
   Extrapolate,
+  withTiming,
+  withRepeat,
+  Easing,
 } from 'react-native-reanimated';
+import {withPause} from 'react-native-redash';
 
 const chatSize = 300;
-const bubbleSize = 50;
+const bubbleSize = 25;
 const bubbles = [0, 1, 2];
 const delta = 1 / bubbles.length;
 
 function App() {
-  const progress = useSharedValue(0);
+  const [play, setPlay] = useState(false);
+
+  const progress = useSharedValue(null);
+  const paused = useSharedValue(!play);
+
+  function onButtonPress() {
+    setPlay((prev) => !prev);
+
+    paused.value = !paused.value;
+
+    if (progress.value === null) {
+      progress.value = withPause(
+        withRepeat(
+          withTiming(1, {duration: 1000, easing: Easing.inOut(Easing.ease)}),
+          -1,
+          true,
+        ),
+        paused,
+      );
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -36,7 +60,7 @@ function App() {
         </View>
       </View>
 
-      <Button title="Press" onPress={() => {}} />
+      <Button title="Press" onPress={onButtonPress} />
     </View>
   );
 }
@@ -52,7 +76,7 @@ function Bubble({start, end, progress}) {
     const scale = interpolate(
       progress.value,
       [start, end],
-      [1, 1.5],
+      [1, 1.8],
       Extrapolate.CLAMP,
     );
 
@@ -82,8 +106,7 @@ const styles = StyleSheet.create({
   bubblesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: bubbles.length * bubbleSize * 1.3,
-    borderWidth: 1,
+    width: chatSize * 0.6,
   },
 
   bubble: {
